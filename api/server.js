@@ -1,12 +1,9 @@
 const express = require('express');
-const multer = require('multer');
 const Papa = require('papaparse');
-const fs = require('fs').promises;
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const upload = multer({ dest: '/tmp/uploads/' });
 
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app'
@@ -29,41 +26,9 @@ const shopifyFieldOrder = [
   'Status', 'Google Shopping / AdWords Grouping', 'Google Shopping / AdWords Labels'
 ];
 
-const tempDataStore = {};
-
-app.post('/upload', upload.single('csv'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    const filePath = req.file.path;
-    const csvData = await fs.readFile(filePath, 'utf8');
-    Papa.parse(csvData, {
-      complete: async (result) => {
-        const sessionId = Date.now().toString();
-        tempDataStore[sessionId] = result.data;
-        await fs.unlink(filePath).catch(err => console.error('Cleanup error:', err));
-        res.json({
-          sessionId,
-          headers: result.meta.fields,
-          preview: result.data.slice(0, 5),
-        });
-      },
-      header: true,
-      error: (err) => {
-        console.error('Parse error:', err);
-        res.status(500).json({ error: 'Failed to parse CSV' });
-      }
-    });
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Failed to process CSV' });
-  }
-});
-
 app.post('/generate', (req, res) => {
   const { mappings, isMultiImage, delimiters, sessionId } = req.body;
-  const data = tempDataStore[sessionId] || [];
+  const data = (global.tempDataStore && global.tempDataStore[sessionId]) || [];
 
   console.log('Mappings:', JSON.stringify(mappings, null, 2));
   console.log('isMultiImage:', JSON.stringify(isMultiImage, null, 2));
@@ -141,8 +106,8 @@ app.post('/generate', (req, res) => {
     console.log(`Row ${index + 1} images:`, JSON.stringify(images, null, 2));
   });
 
-  if (sessionId && tempDataStore[sessionId]) {
-    delete tempDataStore[sessionId];
+  if (global.tempDataStore && sessionId && global.tempDataStore[sessionId]) {
+    delete global.tempDataStore[sessionId];
   }
 
   const csv = Papa.unparse(shopifyData, {

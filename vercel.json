@@ -9,9 +9,17 @@
     {
       "src": "api/server.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/upload.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/upload",
+      "dest": "/api/upload.js"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/server.js"
