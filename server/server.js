@@ -1,18 +1,21 @@
 const express = require('express');
 const multer = require('multer');
 const Papa = require('papaparse');
-const fs = require('fs');
+const fs = require('fs').promises; // Use promises for async
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: '/tmp/uploads/' }); // Vercel uses /tmp for writable storage
 
-app.use(cors({ origin: 'http://localhost:3000' }));
+// CORS for Vercel URL
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000'
+}));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Shopify field order (aligned with import template)
+// Shopify field order
 const shopifyFieldOrder = [
   'Handle', 'Title', 'Body (HTML)', 'Vendor', 'Product Category', 'Type', 'Tags', 'Published',
   'Option1 Name', 'Option1 Value', 'Option1 Linked To', 'Option2 Name', 'Option2 Value', 'Option2 Linked To',
@@ -28,32 +31,40 @@ const shopifyFieldOrder = [
   'Status', 'Google Shopping / AdWords Grouping', 'Google Shopping / AdWords Labels'
 ];
 
-// Store uploaded data temporarily
+// Store uploaded data
 const tempDataStore = {};
 
-app.post('/upload', upload.single('csv'), (req, res) => {
-  const filePath = req.file.path;
-  const csvData = fs.readFileSync(filePath, 'utf8');
-  Papa.parse(csvData, {
-    complete: (result) => {
-      const sessionId = Date.now().toString();
-      tempDataStore[sessionId] = result.data;
-      fs.unlinkSync(filePath);
-      res.json({
-        sessionId,
-        headers: result.meta.fields,
-        preview: result.data.slice(0, 5),
-      });
-    },
-    header: true,
-  });
+app.post('/upload', upload.single('csv'), async (req, res) => {
+  try {
+    const filePath = req.file.path;
+    const csvData = await fs.readFile(filePath, 'utf8');
+    Papa.parse(csvData, {
+      complete: async (result) => {
+        const sessionId = Date.now().toString();
+        tempDataStore[sessionId] = result.data;
+        await fs.unlink(filePath).catch(err => console.error('Cleanup error:', err));
+        res.json({
+          sessionId,
+          headers: result.meta.fields,
+          preview: result.data.slice(0, 5),
+        });
+      },
+      header: true,
+      error: (err) => {
+        console.error('Parse error:', err);
+        res.status(500).json({ error: 'Failed to parse CSV' });
+      }
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: 'Failed to process CSV' });
+  }
 });
 
 app.post('/generate', (req, res) => {
   const { mappings, isMultiImage, delimiters, sessionId } = req.body;
   const data = tempDataStore[sessionId] || [];
 
-  // Debug: Log inputs
   console.log('Mappings:', JSON.stringify(mappings, null, 2));
   console.log('isMultiImage:', JSON.stringify(isMultiImage, null, 2));
   console.log('delimiters:', JSON.stringify(delimiters, null, 2));
@@ -78,29 +89,24 @@ app.post('/generate', (req, res) => {
 
   const shopifyData = [];
   data.forEach((row, index) => {
-    // Initialize main row
     const mainRow = {};
     shopifyFieldOrder.forEach((field) => {
       mainRow[field] = '';
     });
 
-    // Apply non-image mappings
     Object.entries(mappings).forEach(([shopifyField, supplierField]) => {
       if (shopifyField !== 'Image Src' && supplierField && row[supplierField] !== undefined) {
         mainRow[shopifyField] = String(row[supplierField]).trim();
       }
     });
 
-    // Apply defaults only for empty required fields
     Object.keys(defaults).forEach((field) => {
       if (mainRow[field] === '') {
         mainRow[field] = typeof defaults[field] === 'function' ? defaults[field](row, index) : defaults[field];
       }
     });
 
-    // Handle images
     const imageColumns = Array.isArray(mappings['Image Src']) ? mappings['Image Src'] : [];
-
     let images = [];
     imageColumns.forEach((col) => {
       if (row[col] && row[col] !== '') {
@@ -114,14 +120,12 @@ app.post('/generate', (req, res) => {
       }
     });
 
-    // Add main row
     if (images.length > 0) {
       mainRow['Image Src'] = images[0];
       mainRow['Image Position'] = '1';
     }
     shopifyData.push(mainRow);
 
-    // Add extra rows for images
     images.slice(1).forEach((image, imgIndex) => {
       const imageRow = {};
       shopifyFieldOrder.forEach((field) => {
@@ -133,17 +137,14 @@ app.post('/generate', (req, res) => {
       shopifyData.push(imageRow);
     });
 
-    // Debug: Log main row and images
     console.log(`Row ${index + 1} mainRow:`, JSON.stringify(mainRow, null, 2));
     console.log(`Row ${index + 1} images:`, JSON.stringify(images, null, 2));
   });
 
-  // Clean up
   if (sessionId && tempDataStore[sessionId]) {
     delete tempDataStore[sessionId];
   }
 
-  // Generate CSV
   const csv = Papa.unparse(shopifyData, {
     columns: shopifyFieldOrder,
   });
@@ -151,5 +152,4 @@ app.post('/generate', (req, res) => {
   res.send(csv);
 });
 
-const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+module.exports = app; // Vercel requirement
