@@ -17,8 +17,16 @@
       "dest": "server/server.js"
     },
     {
+      "src": "/static/(.*)",
+      "dest": "build/static/$1"
+    },
+    {
+      "src": "/(manifest.json|favicon.ico|logo192.png)",
+      "dest": "build/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "index.html"
+      "dest": "build/index.html"
     }
   ]
 }
