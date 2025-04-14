@@ -4,16 +4,19 @@ import axios from 'axios';
 
 const Upload = ({ setCsvData }) => {
   const [file, setFile] = useState(null);
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.REACT_APP_API_URL || '';
   console.log('API_URL:', API_URL);
 
   const handleUpload = async () => {
     if (!file) return;
-    console.log('Attempting upload to:', `${API_URL}/upload`);
+    const uploadUrl = `${API_URL}/upload`;
+    console.log('Attempting upload to:', uploadUrl);
     const formData = new FormData();
     formData.append('csv', file);
     try {
-      const response = await axios.post(`${API_URL}/upload`, formData);
+      const response = await axios.post(uploadUrl, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       console.log('Upload response:', response.data);
       if (response.data && response.data.headers) {
         setCsvData(response.data);
