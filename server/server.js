@@ -10,7 +10,7 @@ const upload = multer({ dest: '/tmp/uploads/' });
 
 // CORS for Vercel
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://csv-mapper-clean-git-main-wills-projects-f818bf19.vercel.app'
+  origin: process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app'
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
