@@ -18,7 +18,7 @@
     },
     {
       "src": "/(.*)",
-      "handle": "filesystem"
+      "dest": "client/build/index.html"
     }
   ]
 }
