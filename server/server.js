@@ -8,14 +8,12 @@ const bodyParser = require('body-parser');
 const app = express();
 const upload = multer({ dest: '/tmp/uploads/' });
 
-// CORS for Vercel
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app'
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-// Shopify field order
 const shopifyFieldOrder = [
   'Handle', 'Title', 'Body (HTML)', 'Vendor', 'Product Category', 'Type', 'Tags', 'Published',
   'Option1 Name', 'Option1 Value', 'Option1 Linked To', 'Option2 Name', 'Option2 Value', 'Option2 Linked To',
