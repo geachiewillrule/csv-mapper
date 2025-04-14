@@ -1,16 +1,16 @@
 const express = require('express');
 const multer = require('multer');
 const Papa = require('papaparse');
-const fs = require('fs').promises; // Use promises for async
+const fs = require('fs').promises;
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const upload = multer({ dest: '/tmp/uploads/' }); // Vercel uses /tmp for writable storage
+const upload = multer({ dest: '/tmp/uploads/' });
 
-// CORS for Vercel URL
+// CORS for Vercel
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000'
+  origin: process.env.FRONTEND_URL || 'https://csv-mapper-clean-git-main-wills-projects-f818bf19.vercel.app'
 }));
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
@@ -31,7 +31,6 @@ const shopifyFieldOrder = [
   'Status', 'Google Shopping / AdWords Grouping', 'Google Shopping / AdWords Labels'
 ];
 
-// Store uploaded data
 const tempDataStore = {};
 
 app.post('/upload', upload.single('csv'), async (req, res) => {
@@ -152,4 +151,4 @@ app.post('/generate', (req, res) => {
   res.send(csv);
 });
 
-module.exports = app; // Vercel requirement
+module.exports = app;
