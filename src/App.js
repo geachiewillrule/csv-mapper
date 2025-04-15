@@ -9,22 +9,27 @@ import axios from 'axios';
 function App() {
   const [csvData, setCsvData] = useState(null);
 
-  // Dynamic API URL
   const API_URL = process.env.REACT_APP_API_URL || '';
 
-  // Debug csvData updates
   const handleSetCsvData = (data) => {
     console.log('Setting csvData:', data);
     setCsvData(data && data.headers && Array.isArray(data.headers) ? data : null);
   };
 
-  const handleGenerate = async ({ mappings, isMultiImage, delimiters }, sessionId) => {
+  const handleGenerate = async ({ mappings, isMultiImage, delimiters }) => {
+    if (!csvData || !csvData.sessionId) {
+      console.error('No valid sessionId available');
+      alert('Please upload a CSV first.');
+      return;
+    }
+
     try {
+      console.log('Generating with sessionId:', csvData.sessionId);
       const response = await axios.post(`${API_URL}/generate`, {
         mappings,
         isMultiImage,
         delimiters,
-        sessionId,
+        sessionId: csvData.sessionId,
       }, {
         responseType: 'blob',
       });
