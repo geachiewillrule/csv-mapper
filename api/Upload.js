@@ -5,6 +5,14 @@ const fs = require('fs').promises;
 const upload = multer({ dest: '/tmp/uploads/' });
 
 module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const uploadHandler = upload.single('csv');
   uploadHandler(req, res, async (err) => {
     if (err) {

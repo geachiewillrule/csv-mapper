@@ -7,11 +7,11 @@
       "config": { "distDir": "build" }
     },
     {
-      "src": "api/server.js",
+      "src": "api/upload.js",
       "use": "@vercel/node"
     },
     {
-      "src": "api/upload.js",
+      "src": "api/test.js",
       "use": "@vercel/node"
     }
   ],
@@ -21,8 +21,8 @@
       "dest": "/api/upload.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/api/server.js"
+      "src": "/api/test",
+      "dest": "/api/test.js"
     },
     {
       "src": "/(.*)",
