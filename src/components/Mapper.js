@@ -79,7 +79,6 @@ const shopifyFields = [
   { value: 'Google Shopping / AdWords Labels', required: false }
 ];
 
-// Auto-suggest mappings based on header names
 const suggestMappings = (header) => {
   const lowerHeader = header.toLowerCase();
   if (lowerHeader.includes('sku')) return 'Handle';
@@ -109,7 +108,6 @@ const Mapper = ({ headers, csvData, onGenerate }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [presetName, setPresetName] = useState('');
 
-  // Initialize mappings with suggestions
   useEffect(() => {
     const initialMappings = {};
     const initialSuggestions = {};
@@ -190,10 +188,9 @@ const Mapper = ({ headers, csvData, onGenerate }) => {
   const handleGenerate = () => {
     if (!validateMappings()) return;
     console.log('Sending mappings:', JSON.stringify(mappings, null, 2));
-    onGenerate({ mappings, isMultiImage, delimiters }, csvData.sessionId);
+    onGenerate({ mappings, isMultiImage, delimiters });
   };
 
-  // Preset handling
   const handleSavePreset = () => {
     if (!presetName) {
       alert('Please enter a preset name');
