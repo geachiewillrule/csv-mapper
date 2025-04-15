@@ -47,6 +47,8 @@ function App() {
     }
   };
 
+  console.log('Current csvData:', csvData); // Add this
+
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ bgcolor: 'background.default', minHeight: '100vh', py: 4 }}>
