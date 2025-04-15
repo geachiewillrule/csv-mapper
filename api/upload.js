@@ -1,6 +1,9 @@
 const multer = require('multer');
 const Papa = require('papaparse');
 const fs = require('fs').promises;
+const NodeCache = require('node-cache');
+
+const cache = new NodeCache({ stdTTL: 600 }); // 10-min TTL
 
 const upload = multer({ dest: '/tmp/uploads/' });
 
@@ -40,8 +43,7 @@ module.exports = async (req, res) => {
         throw new Error('Failed to parse CSV');
       }
       const sessionId = Date.now().toString();
-      global.tempDataStore = global.tempDataStore || {};
-      global.tempDataStore[sessionId] = parsedData.data;
+      cache.set(sessionId, parsedData.data);
       await fs.unlink(filePath).catch(cleanupErr => console.error('Cleanup error:', cleanupErr));
       res.status(200).json({
         sessionId,

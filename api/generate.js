@@ -1,4 +1,7 @@
 const Papa = require('papaparse');
+const NodeCache = require('node-cache');
+
+const cache = new NodeCache({ stdTTL: 600 });
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app');
@@ -11,10 +14,10 @@ module.exports = async (req, res) => {
 
   try {
     const { mappings, isMultiImage, delimiters, sessionId } = req.body;
-    if (!sessionId || !global.tempDataStore || !global.tempDataStore[sessionId]) {
+    const data = cache.get(sessionId);
+    if (!sessionId || !data) {
       return res.status(400).json({ error: 'Invalid or expired session' });
     }
-    const data = global.tempDataStore[sessionId];
 
     const shopifyFieldOrder = [
       'Handle', 'Title', 'Body (HTML)', 'Vendor', 'Product Category', 'Type', 'Tags', 'Published',
@@ -98,7 +101,7 @@ module.exports = async (req, res) => {
       });
     });
 
-    delete global.tempDataStore[sessionId];
+    cache.del(sessionId);
 
     const csv = Papa.unparse(shopifyData, {
       columns: shopifyFieldOrder,
