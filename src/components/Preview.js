@@ -10,7 +10,7 @@ function Preview({ csvData, mappings }) {
       <Typography variant="h6" gutterBottom>
         Preview Your Shopify CSV
       </Typography>
-      <Typography variant="body2" sx={{ mb enviado 2 }}>
+      <Typography variant="body2" sx={{ mb: 2 }}>
         Here’s how your data will look. Your SKU is now Shopify’s Handle.
       </Typography>
       <Paper elevation={1} sx={{ p: 2, maxHeight: 200, overflow: 'auto' }}>

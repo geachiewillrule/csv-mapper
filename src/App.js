@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
-import { Container, Typography, Box, Stepper, Step, StepLabel, Button, Alert, Snackbar } from '@mui/material';
+import { Container, Typography, Box, Stepper, Step, StepLabel, Button, Alert, Snackbar, Paper } from '@mui/material';
 import Upload from './components/Upload';
 import Mapper from './components/Mapper';
 import Preview from './components/Preview';
@@ -112,6 +112,8 @@ function App() {
             csvData={csvData}
             onMappingChange={handleMappingChange}
             initialMappings={mappings}
+            initialIsMultiImage={isMultiImage}
+            initialDelimiters={delimiters}
           />
         ) : (
           <Typography>No CSV data loaded.</Typography>

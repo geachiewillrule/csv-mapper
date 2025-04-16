@@ -94,39 +94,31 @@ const suggestMappings = (header) => {
   return '';
 };
 
-function Mapper({ headers  headers, csvData, onMappingChange, initialMappings, initialIsMultiImage, initialDelimiters }) {
-  const [mappings, setMappings] useState(initialMappings || {});
-  const [isMultiImage, setIsMultiImage] useState(initialIsMultiImage || {});
-  const [delimiters, setDelimiters] useState(initialDelimiters || {});
-  const [suggestedMappings, set sugMappings] useState({});
-  const [presets, setPresets] useState(JSON.parse(localStorage.getI('mappingPresets') || '{}'));
-  const [anchorEl, setAnchorEl] useState(null);
-  const initialMappings, setInitialMappings] useState(initialMappings || {});
-  const [presetName, setPresetName] useState('');
-  
+function Mapper({ headers, csvData, onMappingChange, initialMappings, initialIsMultiImage, initialDelimiters }) {
+  const [mappings, setMappings] = useState(initialMappings || {});
+  const [isMultiImage, setIsMultiImage] = useState(initialIsMultiImage || {});
+  const [delimiters, setDelimiters] = useState(initialDelimiters || {});
+  const [suggestedMappings, setSuggestedMappings] = useState({});
+  const [presets, setPresets] = useState(JSON.parse(localStorage.getItem('mappingPresets') || '{}'));
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [presetName, setPresetName] = useState('');
+
   useEffect(() => {
-    const initialMappings = { ...initialMappings };
     const initialSuggestions = {};
     headers.forEach((header) => {
       const suggestedField = suggestMappings(header);
       if (suggestedField === 'Image Src') {
-        initialMappings['Image Src'] = initialMappings['Image Src'] || [];
-        if (!initialMappings['Image Src'].includes(header)) {
-          initialMappings['Image Src'].push(header);
-        }
         initialSuggestions[header] = 'Image Src';
-      } else if (suggestedField && !Object.values(initialMappings).includes(header)) {
-        initialMappings[suggestedField] = header;
+      } else if (suggestedField && !Object.values(mappings).includes(header)) {
         initialSuggestions[header] = suggestedField;
       }
     });
-    setMappings(initialMappings);
     setSuggestedMappings(initialSuggestions);
-  }, [headers, initialMappings]);
+  }, [headers, mappings]);
 
   useEffect(() => {
     onMappingChange({ mappings, isMultiImage, delimiters });
-  }, [mappings, isMultiImage, delimiters]);
+  }, [mappings, isMultiImage, delimiters, onMappingChange]);
 
   const handleMappingChange = (supplierField, shopifyField) => {
     const newMappings = { ...mappings };
