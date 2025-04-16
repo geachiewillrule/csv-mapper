@@ -196,26 +196,23 @@ function Mapper({ headers, csvData, onMappingChange, initialMappings, initialIsM
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 2 }}>
-        Match <strong>Your CSV Headers</strong> (left) to <strong>Shopify Fields</strong> (right). Start with your SKU for Handle!
+        Pick a <strong>Shopify Field</strong> for each <strong>CSV Header</strong> below. Start with your SKU for Handle!
       </Alert>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-        <Box sx={{ flex: 1, borderLeft: '2px solid green', bgcolor: '#f5f5f5', p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Your CSV Headers
-          </Typography>
-          {headers.map((header) => (
-            <Box key={header} sx={{ mb: 1 }}>
-              <Typography>{header}</Typography>
-            </Box>
-          ))}
-        </Box>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h6" gutterBottom>
-            Shopify Fields
-          </Typography>
-          {headers.map((header) => (
-            <FormControl fullWidth key={header} sx={{ mb: 1 }}>
-              <InputLabel>{header}</InputLabel>
+      <Box sx={{ mb: 2 }}>
+        {headers.map((header) => (
+          <Box
+            key={header}
+            sx={{
+              display: 'flex',
+              gap: 2,
+              mb: 2,
+              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+            }}
+          >
+            <Typography sx={{ flex: 1, fontWeight: 'medium' }}>{header}</Typography>
+            <FormControl sx={{ flex: 1 }}>
+              <InputLabel>Shopify Field</InputLabel>
               <Select
                 value={
                   Object.keys(mappings).find((key) =>
@@ -225,7 +222,7 @@ function Mapper({ headers, csvData, onMappingChange, initialMappings, initialIsM
                   ) || ''
                 }
                 onChange={(e) => handleMappingChange(header, e.target.value)}
-                label={header}
+                label="Shopify Field"
                 sx={{
                   ...(suggestedMappings[header] && {
                     '& .MuiOutlinedInput-notchedOutline': {
@@ -261,8 +258,8 @@ function Mapper({ headers, csvData, onMappingChange, initialMappings, initialIsM
                 ))}
               </Select>
             </FormControl>
-          ))}
-        </Box>
+          </Box>
+        ))}
       </Box>
       <Box sx={{ mb: 2 }}>
         {mappings['Image Src'] && Array.isArray(mappings['Image Src']) && mappings['Image Src'].map((header) => (
