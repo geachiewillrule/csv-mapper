@@ -196,75 +196,91 @@ function Mapper({ headers, csvData, onMappingChange, initialMappings, initialIsM
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 2 }}>
-        Map your <strong>Uploaded CSV Headers</strong> to <strong>Shopify Fields</strong> below. Start with your SKU for Handle!
+        Map each <strong>Uploaded CSV Header</strong> to a <strong>Shopify Field</strong> on the same row. Start with your SKU for Handle!
       </Alert>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-        <Box sx={{ flex: 1, borderLeft: '2px solid green', p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Uploaded CSV Headers
-          </Typography>
-          {headers.map((header) => (
-            <Box key={header} sx={{ mb: 2 }}>
-              <Typography sx={{ fontWeight: 'medium' }}>{header}</Typography>
-            </Box>
-          ))}
+      <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" gutterBottom>
+              Uploaded CSV Headers
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6" gutterBottom>
+              Shopify Fields
+            </Typography>
+          </Box>
         </Box>
-        <Box sx={{ flex: 1, p: 2 }}>
-          <Typography variant="h6" gutterBottom>
-            Shopify Fields
-          </Typography>
-          {headers.map((header) => (
-            <Box key={header} sx={{ mb: 2 }}>
-              <FormControl fullWidth>
-                <InputLabel>Shopify Field</InputLabel>
-                <Select
-                  value={
-                    Object.keys(mappings).find((key) =>
-                      key === 'Image Src'
-                        ? mappings[key].includes(header)
-                        : mappings[key] === header
-                    ) || ''
-                  }
-                  onChange={(e) => handleMappingChange(header, e.target.value)}
-                  label="Shopify Field"
-                  sx={{
-                    ...(suggestedMappings[header] && {
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'green',
-                        borderWidth: 2,
-                      },
-                      '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'darkgreen',
-                        borderWidth: 2,
-                      },
-                    }),
-                  }}
-                >
-                  <MenuItem value="">Unmapped</MenuItem>
-                  {shopifyFields.map((field) => (
-                    <MenuItem
-                      key={field.value}
-                      value={field.value}
-                      disabled={
-                        field.value !== 'Image Src' &&
-                        Object.keys(mappings).includes(field.value) &&
-                        mappings[field.value] !== header
-                      }
-                    >
-                      {field.label || field.value}
-                      {field.required && ' (required)'}
-                      {field.value === 'Handle' && (
-                        <Tooltip title="Shopify’s Handle is your supplier’s unique product code, like SKU or Item Code (e.g., TW15ASCE).">
-                          <span style={{ marginLeft: 4 }}>ℹ️</span>
-                        </Tooltip>
-                      )}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
-          ))}
-        </Box>
+        {headers.map((header) => (
+          <Box
+            key={header}
+            sx={{
+              display: 'flex',
+              gap: 2,
+              mb: 2,
+              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+            }}
+          >
+            <Typography
+              sx={{
+                flex: 1,
+                fontWeight: 'medium',
+                borderLeft: '2px solid green',
+                pl: 1,
+              }}
+            >
+              {header}
+            </Typography>
+            <FormControl sx={{ flex: 1 }}>
+              <InputLabel>Shopify Field</InputLabel>
+              <Select
+                value={
+                  Object.keys(mappings).find((key) =>
+                    key === 'Image Src'
+                      ? mappings[key].includes(header)
+                      : mappings[key] === header
+                  ) || ''
+                }
+                onChange={(e) => handleMappingChange(header, e.target.value)}
+                label="Shopify Field"
+                sx={{
+                  ...(suggestedMappings[header] && {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'green',
+                      borderWidth: 2,
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'darkgreen',
+                      borderWidth: 2,
+                    },
+                  }),
+                }}
+              >
+                <MenuItem value="">Unmapped</MenuItem>
+                {shopifyFields.map((field) => (
+                  <MenuItem
+                    key={field.value}
+                    value={field.value}
+                    disabled={
+                      field.value !== 'Image Src' &&
+                      Object.keys(mappings).includes(field.value) &&
+                      mappings[field.value] !== header
+                    }
+                  >
+                    {field.label || field.value}
+                    {field.required && ' (required)'}
+                    {field.value === 'Handle' && (
+                      <Tooltip title="Shopify’s Handle is your supplier’s unique product code, like SKU or Item Code (e.g., TW15ASCE).">
+                        <span style={{ marginLeft: 4 }}>ℹ️</span>
+                      </Tooltip>
+                    )}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        ))}
       </Box>
       <Box sx={{ mb: 2 }}>
         {mappings['Image Src'] && Array.isArray(mappings['Image Src']) && mappings['Image Src'].map((header) => (
