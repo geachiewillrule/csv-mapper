@@ -14,9 +14,11 @@ module.exports = async (req, res) => {
   try {
     const { mappings, isMultiImage, delimiters, sessionId } = req.body;
     const storePath = path.join('/tmp', `${sessionId}.json`);
+    console.log('Reading from:', storePath);
     let data;
     try {
       const rawData = await fs.readFile(storePath, 'utf8');
+      console.log('Read successful:', storePath);
       data = JSON.parse(rawData);
     } catch (error) {
       console.error('Read error:', error);
@@ -24,6 +26,7 @@ module.exports = async (req, res) => {
     }
 
     if (!sessionId || !data) {
+      console.log('Invalid sessionId or no data:', { sessionId, data });
       return res.status(400).json({ error: 'Invalid or expired session' });
     }
 

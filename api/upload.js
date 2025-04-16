@@ -42,7 +42,10 @@ module.exports = async (req, res) => {
       }
       const sessionId = Date.now().toString();
       const storePath = path.join('/tmp', `${sessionId}.json`);
-      await fs.writeFile(storePath, JSON.stringify(parsedData.data));
+      console.log('Writing to:', storePath);
+      await fs.writeFile(storePath, JSON.stringify(parsedData.data))
+        .then(() => console.log('Write successful:', storePath))
+        .catch(error => console.error('Write error:', error));
       await fs.unlink(filePath).catch(cleanupErr => console.error('Cleanup error:', cleanupErr));
       res.status(200).json({
         sessionId,
