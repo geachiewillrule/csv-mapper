@@ -1,7 +1,7 @@
 const Papa = require('papaparse');
-const { get } = require('@vercel/blob');
 
 module.exports = async (req, res) => {
+  console.log('Starting generate handler');
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -13,15 +13,19 @@ module.exports = async (req, res) => {
   try {
     const { mappings, isMultiImage, delimiters, sessionId } = req.body;
     console.log('Fetching from Blob:', sessionId);
+    console.log('BLOB_READ_WRITE_TOKEN:', !!process.env.BLOB_READ_WRITE_TOKEN);
+    console.log('Before Blob fetch');
     let data;
     try {
-      const blob = await get(`sessions/${sessionId}.json`, {
-        token: process.env.BLOB_READ_WRITE_TOKEN
+      const response = await fetch(`https://blob.vercel-storage.com/sessions/${sessionId}.json`, {
+        headers: {
+          Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+        }
       });
-      if (!blob) {
-        throw new Error('Blob not found');
+      if (!response.ok) {
+        throw new Error(`Blob fetch failed: ${response.status}`);
       }
-      const rawData = await blob.text();
+      const rawData = await response.text();
       data = JSON.parse(rawData);
       console.log('Blob fetched:', `sessions/${sessionId}.json`);
     } catch (error) {
@@ -116,7 +120,6 @@ module.exports = async (req, res) => {
       });
     });
 
-    // Delete blob after use
     await fetch(`https://api.vercel.com/v2/blob/files/sessions/${sessionId}.json`, {
       method: 'DELETE',
       headers: {

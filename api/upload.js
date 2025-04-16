@@ -6,6 +6,7 @@ const { put } = require('@vercel/blob');
 const upload = multer({ dest: '/tmp/uploads/' });
 
 module.exports = async (req, res) => {
+  console.log('Starting upload handler');
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -24,6 +25,7 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
     try {
+      console.log('Reading file:', req.file.path);
       const filePath = req.file.path;
       const csvData = await fs.readFile(filePath, 'utf8');
       let parsedData;
@@ -41,10 +43,11 @@ module.exports = async (req, res) => {
         throw new Error('Failed to parse CSV');
       }
       const sessionId = Date.now().toString();
-      console.log('Storing to Blob:', sessionId);
+      console.log('Parsed data, sessionId:', sessionId);
+      console.log('BLOB_READ_WRITE_TOKEN:', !!process.env.BLOB_READ_WRITE_TOKEN);
+      console.log('Before Blob put');
       const blob = await put(`sessions/${sessionId}.json`, JSON.stringify(parsedData.data), {
-        access: 'public',
-        token: process.env.BLOB_READ_WRITE_TOKEN
+        access: 'public'
       });
       console.log('Blob stored:', blob.url);
       await fs.unlink(filePath).catch(cleanupErr => console.error('Cleanup error:', cleanupErr));
