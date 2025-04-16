@@ -17,11 +17,9 @@ module.exports = async (req, res) => {
     console.log('Before Blob fetch');
     let data;
     try {
-      const response = await fetch(`https://blob.vercel-storage.com/sessions/${sessionId}.json`, {
-        headers: {
-          Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
-        }
-      });
+      const blobUrl = `https://lmszzzy6dpvvsuhm.public.blob.vercel-storage.com/sessions/${sessionId}.json`;
+      console.log('Fetching Blob URL:', blobUrl);
+      const response = await fetch(blobUrl);
       if (!response.ok) {
         throw new Error(`Blob fetch failed: ${response.status}`);
       }
