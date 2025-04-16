@@ -1,7 +1,7 @@
 const multer = require('multer');
 const Papa = require('papaparse');
 const fs = require('fs').promises;
-const path = require('path');
+const { put } = require('@vercel/blob');
 
 const upload = multer({ dest: '/tmp/uploads/' });
 
@@ -41,11 +41,12 @@ module.exports = async (req, res) => {
         throw new Error('Failed to parse CSV');
       }
       const sessionId = Date.now().toString();
-      const storePath = path.join('/tmp', `${sessionId}.json`);
-      console.log('Writing to:', storePath);
-      await fs.writeFile(storePath, JSON.stringify(parsedData.data))
-        .then(() => console.log('Write successful:', storePath))
-        .catch(error => console.error('Write error:', error));
+      console.log('Storing to Blob:', sessionId);
+      const blob = await put(`sessions/${sessionId}.json`, JSON.stringify(parsedData.data), {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN
+      });
+      console.log('Blob stored:', blob.url);
       await fs.unlink(filePath).catch(cleanupErr => console.error('Cleanup error:', cleanupErr));
       res.status(200).json({
         sessionId,

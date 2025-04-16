@@ -1,6 +1,5 @@
 const Papa = require('papaparse');
-const fs = require('fs').promises;
-const path = require('path');
+const { get } = require('@vercel/blob');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'https://csv-mapper-clean.vercel.app');
@@ -13,15 +12,20 @@ module.exports = async (req, res) => {
 
   try {
     const { mappings, isMultiImage, delimiters, sessionId } = req.body;
-    const storePath = path.join('/tmp', `${sessionId}.json`);
-    console.log('Reading from:', storePath);
+    console.log('Fetching from Blob:', sessionId);
     let data;
     try {
-      const rawData = await fs.readFile(storePath, 'utf8');
-      console.log('Read successful:', storePath);
+      const blob = await get(`sessions/${sessionId}.json`, {
+        token: process.env.BLOB_READ_WRITE_TOKEN
+      });
+      if (!blob) {
+        throw new Error('Blob not found');
+      }
+      const rawData = await blob.text();
       data = JSON.parse(rawData);
+      console.log('Blob fetched:', `sessions/${sessionId}.json`);
     } catch (error) {
-      console.error('Read error:', error);
+      console.error('Blob error:', error);
       return res.status(400).json({ error: 'Invalid or expired session' });
     }
 
@@ -112,7 +116,13 @@ module.exports = async (req, res) => {
       });
     });
 
-    await fs.unlink(storePath).catch(cleanupErr => console.error('Cleanup error:', cleanupErr));
+    // Delete blob after use
+    await fetch(`https://api.vercel.com/v2/blob/files/sessions/${sessionId}.json`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+      }
+    }).catch(err => console.error('Blob delete error:', err));
 
     const csv = Papa.unparse(shopifyData, {
       columns: shopifyFieldOrder,
