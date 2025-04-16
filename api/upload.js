@@ -1,9 +1,7 @@
 const multer = require('multer');
 const Papa = require('papaparse');
 const fs = require('fs').promises;
-const NodeCache = require('node-cache');
-
-const cache = new NodeCache({ stdTTL: 600 }); // 10-min TTL
+const path = require('path');
 
 const upload = multer({ dest: '/tmp/uploads/' });
 
@@ -43,7 +41,8 @@ module.exports = async (req, res) => {
         throw new Error('Failed to parse CSV');
       }
       const sessionId = Date.now().toString();
-      cache.set(sessionId, parsedData.data);
+      const storePath = path.join('/tmp', `${sessionId}.json`);
+      await fs.writeFile(storePath, JSON.stringify(parsedData.data));
       await fs.unlink(filePath).catch(cleanupErr => console.error('Cleanup error:', cleanupErr));
       res.status(200).json({
         sessionId,
