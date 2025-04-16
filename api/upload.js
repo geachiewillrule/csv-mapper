@@ -28,6 +28,7 @@ module.exports = async (req, res) => {
       console.log('Reading file:', req.file.path);
       const filePath = req.file.path;
       const csvData = await fs.readFile(filePath, 'utf8');
+      console.log('File read, parsing CSV');
       let parsedData;
       Papa.parse(csvData, {
         complete: (result) => {
@@ -46,11 +47,18 @@ module.exports = async (req, res) => {
       console.log('Parsed data, sessionId:', sessionId);
       console.log('BLOB_READ_WRITE_TOKEN:', !!process.env.BLOB_READ_WRITE_TOKEN);
       console.log('Before Blob put');
-      const blob = await put(`sessions/${sessionId}.json`, JSON.stringify(parsedData.data), {
-        access: 'public'
-      });
-      console.log('Blob stored:', blob.url);
+      try {
+        const blob = await put(`sessions/${sessionId}.json`, JSON.stringify(parsedData.data), {
+          access: 'public',
+          addRandomSuffix: false
+        });
+        console.log('Blob stored:', blob.url);
+      } catch (blobErr) {
+        console.error('Blob put error:', blobErr);
+        throw blobErr;
+      }
       await fs.unlink(filePath).catch(cleanupErr => console.error('Cleanup error:', cleanupErr));
+      console.log('Sending upload response');
       res.status(200).json({
         sessionId,
         headers: parsedData.meta.fields,
