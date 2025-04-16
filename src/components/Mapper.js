@@ -6,23 +6,24 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Button,
   Paper,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
+  TableHead,
   TableRow,
+  Alert,
+  Tooltip,
   TextField,
+  Button,
   Checkbox,
   FormControlLabel,
-  Tooltip,
   Menu,
   MenuItem as DropdownMenuItem,
 } from '@mui/material';
 
 const shopifyFields = [
-  { value: 'Handle', required: true },
+  { value: 'Handle', label: 'Handle (usually SKU)', required: true },
   { value: 'Title', required: true },
   { value: 'Body (HTML)', required: false },
   { value: 'Vendor', required: false },
@@ -76,12 +77,12 @@ const shopifyFields = [
   { value: 'Compare At Price / Australia', required: false },
   { value: 'Status', required: true },
   { value: 'Google Shopping / AdWords Grouping', required: false },
-  { value: 'Google Shopping / AdWords Labels', required: false }
+  { value: 'Google Shopping / AdWords Labels', required: false },
 ];
 
 const suggestMappings = (header) => {
   const lowerHeader = header.toLowerCase();
-  if (lowerHeader.includes('sku')) return 'Handle';
+  if (lowerHeader.includes('sku') || lowerHeader.includes('item code')) return 'Handle';
   if (lowerHeader.includes('name') || lowerHeader.includes('title')) return 'Title';
   if (lowerHeader.includes('description')) return 'Body (HTML)';
   if (lowerHeader.includes('brand') || lowerHeader.includes('vendor')) return 'Vendor';
@@ -93,29 +94,26 @@ const suggestMappings = (header) => {
   return '';
 };
 
-const Mapper = ({ headers, csvData, onGenerate }) => {
-  const [mappings, setMappings] = useState({});
-  const [suggestedMappings, setSuggestedMappings] = useState({});
-  const [isMultiImage, setIsMultiImage] = useState(
-    headers.reduce((acc, header) => ({ ...acc, [header]: false }), {})
-  );
-  const [delimiters, setDelimiters] = useState(
-    headers.reduce((acc, header) => ({ ...acc, [header]: '' }), {})
-  );
-  const [presets, setPresets] = useState(
-    JSON.parse(localStorage.getItem('mappingPresets') || '{}')
-  );
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [presetName, setPresetName] = useState('');
-
+function Mapper({ headers  headers, csvData, onMappingChange, initialMappings, initialIsMultiImage, initialDelimiters }) {
+  const [mappings, setMappings] useState(initialMappings || {});
+  const [isMultiImage, setIsMultiImage] useState(initialIsMultiImage || {});
+  const [delimiters, setDelimiters] useState(initialDelimiters || {});
+  const [suggestedMappings, set sugMappings] useState({});
+  const [presets, setPresets] useState(JSON.parse(localStorage.getI('mappingPresets') || '{}'));
+  const [anchorEl, setAnchorEl] useState(null);
+  const initialMappings, setInitialMappings] useState(initialMappings || {});
+  const [presetName, setPresetName] useState('');
+  
   useEffect(() => {
-    const initialMappings = {};
+    const initialMappings = { ...initialMappings };
     const initialSuggestions = {};
     headers.forEach((header) => {
       const suggestedField = suggestMappings(header);
       if (suggestedField === 'Image Src') {
         initialMappings['Image Src'] = initialMappings['Image Src'] || [];
-        initialMappings['Image Src'].push(header);
+        if (!initialMappings['Image Src'].includes(header)) {
+          initialMappings['Image Src'].push(header);
+        }
         initialSuggestions[header] = 'Image Src';
       } else if (suggestedField && !Object.values(initialMappings).includes(header)) {
         initialMappings[suggestedField] = header;
@@ -124,7 +122,11 @@ const Mapper = ({ headers, csvData, onGenerate }) => {
     });
     setMappings(initialMappings);
     setSuggestedMappings(initialSuggestions);
-  }, [headers]);
+  }, [headers, initialMappings]);
+
+  useEffect(() => {
+    onMappingChange({ mappings, isMultiImage, delimiters });
+  }, [mappings, isMultiImage, delimiters]);
 
   const handleMappingChange = (supplierField, shopifyField) => {
     const newMappings = { ...mappings };
@@ -174,23 +176,6 @@ const Mapper = ({ headers, csvData, onGenerate }) => {
     setDelimiters({ ...delimiters, [supplierField]: value });
   };
 
-  const validateMappings = () => {
-    const invalidDelimiters = Object.entries(isMultiImage).filter(
-      ([field, isMulti]) => isMulti && !delimiters[field]
-    );
-    if (invalidDelimiters.length > 0) {
-      alert(`Please specify delimiters for multi-image columns: ${invalidDelimiters.map(([f]) => f).join(', ')}`);
-      return false;
-    }
-    return true;
-  };
-
-  const handleGenerate = () => {
-    if (!validateMappings()) return;
-    console.log('Sending mappings:', JSON.stringify(mappings, null, 2));
-    onGenerate({ mappings, isMultiImage, delimiters });
-  };
-
   const handleSavePreset = () => {
     if (!presetName) {
       alert('Please enter a preset name');
@@ -217,11 +202,124 @@ const Mapper = ({ headers, csvData, onGenerate }) => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
+    <Box>
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Match <strong>Your CSV Headers</strong> (left) to <strong>Shopify Fields</strong> (right). Start with your SKU for Handle!
+      </Alert>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+        <Box sx={{ flex: 1, borderLeft: '2px solid green', bgcolor: '#f5f5f5', p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Your CSV Headers
+          </Typography>
+          {headers.map((header) => (
+            <Box key={header} sx={{ mb: 1 }}>
+              <Typography>{header}</Typography>
+            </Box>
+          ))}
+        </Box>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h6" gutterBottom>
+            Shopify Fields
+          </Typography>
+          {headers.map((header) => (
+            <FormControl fullWidth key={header} sx={{ mb: 1 }}>
+              <InputLabel>{header}</InputLabel>
+              <Select
+                value={
+                  Object.keys(mappings).find((key) =>
+                    key === 'Image Src'
+                      ? mappings[key].includes(header)
+                      : mappings[key] === header
+                  ) || ''
+                }
+                onChange={(e) => handleMappingChange(header, e.target.value)}
+                label={header}
+                sx={{
+                  ...(suggestedMappings[header] && {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'green',
+                      borderWidth: 2,
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'darkgreen',
+                      borderWidth: 2,
+                    },
+                  }),
+                }}
+              >
+                <MenuItem value="">Unmapped</MenuItem>
+                {shopifyFields.map((field) => (
+                  <MenuItem
+                    key={field.value}
+                    value={field.value}
+                    disabled={
+                      field.value !== 'Image Src' &&
+                      Object.keys(mappings).includes(field.value) &&
+                      mappings[field.value] !== header
+                    }
+                  >
+                    {field.label || field.value}
+                    {field.required && ' (required)'}
+                    {field.value === 'Handle' && (
+                      <Tooltip title="Shopify’s Handle is your supplier’s unique product code, like SKU or Item Code (e.g., TW15ASCE).">
+                        <span style={{ marginLeft: 4 }}>ℹ️</span>
+                      </Tooltip>
+                    )}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ))}
+        </Box>
+      </Box>
+      <Box sx={{ mb: 2 }}>
+        {mappings['Image Src'] && Array.isArray(mappings['Image Src']) && mappings['Image Src'].map((header) => (
+          <Box key={header} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 1 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!isMultiImage[header]}
+                  onChange={(e) => handleMultiImageChange(header, e.target.checked)}
+                />
+              }
+              label={`Multiple images in ${header}`}
+            />
+            {isMultiImage[header] && (
+              <TextField
+                label="Delimiter (e.g., comma)"
+                value={delimiters[header] || ''}
+                onChange={(e) => handleDelimiterChange(header, e.target.value)}
+                size="small"
+                sx={{ width: 150 }}
+              />
+            )}
+          </Box>
+        ))}
+      </Box>
       <Typography variant="h6" gutterBottom>
-        Map Columns
+        Sample Data from Your CSV
       </Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+      <Paper elevation={1} sx={{ p: 2, maxHeight: 200, overflow: 'auto' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {headers.slice(0, 5).map((header) => (
+                <TableCell key={header}>{header}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {csvData.preview.slice(0, 2).map((row, index) => (
+              <TableRow key={index}>
+                {headers.slice(0, 5).map((header) => (
+                  <TableCell key={header}>{row[header] || ''}</TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Paper>
+      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
         <TextField
           label="Preset Name"
           value={presetName}
@@ -255,103 +353,8 @@ const Mapper = ({ headers, csvData, onGenerate }) => {
           ))}
         </Menu>
       </Box>
-      <TableContainer sx={{ maxHeight: 400, overflow: 'auto' }}>
-        <Table stickyHeader>
-          <TableBody>
-            {headers.map((header) => (
-              <TableRow key={header}>
-                <TableCell sx={{ fontWeight: 'medium', minWidth: 150 }}>{header}</TableCell>
-                <TableCell sx={{ minWidth: 300 }}>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Tooltip
-                      title={
-                        suggestedMappings[header]
-                          ? `Suggested mapping based on header "${header}"`
-                          : ''
-                      }
-                      disableInteractive
-                    >
-                      <FormControl fullWidth>
-                        <InputLabel>Shopify Field</InputLabel>
-                        <Select
-                          value={
-                            Object.keys(mappings).find((key) =>
-                              key === 'Image Src'
-                                ? mappings[key].includes(header)
-                                : mappings[key] === header
-                            ) || ''
-                          }
-                          onChange={(e) => handleMappingChange(header, e.target.value)}
-                          label="Shopify Field"
-                          sx={{
-                            ...(suggestedMappings[header] && {
-                              '& .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'green',
-                                borderWidth: 2,
-                              },
-                              '&:hover .MuiOutlinedInput-notchedOutline': {
-                                borderColor: 'darkgreen',
-                                borderWidth: 2,
-                              },
-                            }),
-                          }}
-                        >
-                          <MenuItem value="">-- None --</MenuItem>
-                          {shopifyFields.map((field) => (
-                            <MenuItem
-                              key={field.value}
-                              value={field.value}
-                              disabled={
-                                field.value !== 'Image Src' &&
-                                Object.keys(mappings).includes(field.value) &&
-                                mappings[field.value] !== header
-                              }
-                            >
-                              {field.value} {field.required && '(required)'}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Tooltip>
-                    {(mappings['Image Src'] && mappings['Image Src'].includes(header)) && (
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={!!isMultiImage[header]}
-                              onChange={(e) => handleMultiImageChange(header, e.target.checked)}
-                            />
-                          }
-                          label="Contains multiple images"
-                        />
-                        {isMultiImage[header] && (
-                          <TextField
-                            label="Delimiter (e.g., comma)"
-                            value={delimiters[header] || ''}
-                            onChange={(e) => handleDelimiterChange(header, e.target.value)}
-                            size="small"
-                            sx={{ width: 150 }}
-                          />
-                        )}
-                      </Box>
-                    )}
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleGenerate}
-        sx={{ mt: 2 }}
-      >
-        Generate Shopify CSV
-      </Button>
-    </Paper>
+    </Box>
   );
-};
+}
 
 export default Mapper;
